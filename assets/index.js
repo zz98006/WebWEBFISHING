@@ -246,8 +246,8 @@ gamePacketReciever.addEventListener("message", (packet) => {
       }
       case PacketType.S2CPacket: {
         const channelCache = channelPacketCache.get(packet.data.channel),
-          packet = { sender: packet.data.sender, data: packet.data.data };
-        channelCache == null ? channelPacketCache.set(packet.data.channel, [packet]) : channelCache.push(packet);
+          packet1 = { sender: packet.data.sender, data: packet.data.data };
+        channelCache == null ? channelPacketCache.set(packet.data.channel, [packet1]) : channelCache.push(packet1);
         break;
       }
       case PacketType.S2CCreateLobby: {
