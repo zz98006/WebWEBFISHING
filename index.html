@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebWEBFISHING</title>
+    <script type="text/javascript" src="webfishing_2_newver.js"></script>
+    <script type="module" crossorigin src="/assets/index.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="stuff">
+        <div id="settings">
+          <input type="text" id="username" placeholder="Player" />
+          <label for="username">username</label>
+
+          <input type="file" id="save" accept=".sav" />
+          <label for="save">import save file</label>
+
+          <button id="downloadSave">download save file</button>
+          <button id="resetSave">reset save</button>
+        </div>
+
+        <p>
+          <label for="exe"
+            >upload webfishing.exe from your game install to load the
+            game</label
+          >
+          <br />
+          <br />
+          <input type="file" id="exe" accept=".exe" disabled />
+        </p>
+      </div>
+
+      <div id="credits">
+        <span>AND REMEMBER, NO FAKE SHIT</span>
+        <br />
+        <span
+          >port + networking by <a href="https://notnite.com/">notnite</a></span
+        >
+        <br />
+        <span>
+          game created by <a href="https://lamedeveloper.itch.io/">lamedev</a>
+        </span>
+      </div>
+    </div>
+    <canvas id="canvas"></canvas>
+  </body>
+</html>
