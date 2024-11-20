@@ -311,13 +311,13 @@ gameFilePicker.addEventListener("input", () => {
 
 async function injectPatches() {
   await GODOT.init( "./" + PROJECT_NAME);
-  const networkingScript = await fetch("./Steam.gdc").then((data) => data.arrayBuffer());
+  const networkingScript = await fetch("Steam.gdc").then((data) => data.arrayBuffer());
   await GODOT.preloadFile(networkingScript, "Steam.gdc");
   const overrideConfig = `[autoload]\nSteam="*./Steam.gdc"`.trim();
   await GODOT.preloadFile(new TextEncoder().encode(overrideConfig), "override.cfg");
   gameFilePicker.disabled = false;
 }
-injectPatches();
+await injectPatches();
 
 async function loadGodotFS() {
   if (!(await window.indexedDB.databases()).some((n) => n.name === "/userfs"))
