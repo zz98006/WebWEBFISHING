@@ -310,7 +310,7 @@ gameFilePicker.addEventListener("input", () => {
 });
 
 async function injectPatches() {
-  await GODOT.init(location.pathname +  PROJECT_NAME);
+  await GODOT.init(PROJECT_NAME);
   const networkingScript = await fetch(suffix + "Steam.gdc").then((data) => data.arrayBuffer());
   await GODOT.preloadFile(networkingScript, "Steam.gdc");
   const overrideConfig = `[autoload]\nSteam="*./Steam.gdc"`.trim();
