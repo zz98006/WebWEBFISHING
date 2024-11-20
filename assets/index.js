@@ -290,7 +290,7 @@ const PROJECT_NAME = "webfishing_2_newver",
   PACKAGE_NAME = PROJECT_NAME + ".pck",
   GODOT = new window.Engine({
     canvasResizePolicy: 2,
-    executable: location.pathname + PROJECT_NAME,
+    executable: PROJECT_NAME,
     focusCanvas: true,
     args: ["--main-pack", PACKAGE_NAME],
   }),
