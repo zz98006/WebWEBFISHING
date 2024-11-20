@@ -1,3 +1,5 @@
+Originally created by [notnite](https://github.com/NotNite)
+
 # webwebfishing
 reversed code for https://webwebfishing.notnite.com with improvements in the future
 
