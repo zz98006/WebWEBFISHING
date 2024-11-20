@@ -290,7 +290,7 @@ const PROJECT_NAME = "webfishing_2_newver",
   PACKAGE_NAME = PROJECT_NAME + ".pck",
   GODOT = new window.Engine({
     canvasResizePolicy: 2,
-    executable: PROJECT_NAME,
+    executable: "./" + PROJECT_NAME,
     focusCanvas: true,
     args: ["--main-pack", PACKAGE_NAME],
   }),
@@ -310,7 +310,7 @@ gameFilePicker.addEventListener("input", () => {
 });
 
 async function injectPatches() {
-  await GODOT.init(PROJECT_NAME);
+  await GODOT.init( "./" + PROJECT_NAME);
   const networkingScript = await fetch(suffix + "Steam.gdc").then((data) => data.arrayBuffer());
   await GODOT.preloadFile(networkingScript, "Steam.gdc");
   const overrideConfig = `[autoload]\nSteam="*./Steam.gdc"`.trim();
