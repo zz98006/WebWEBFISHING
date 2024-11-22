@@ -81,10 +81,10 @@ var StatusType = ((status) => (
 
 const suffix = window.self !== window.top ? "/.proxy/" : "/";
 
-const serverURL = new URL("http://127.0.0.1:9000");
+//const serverURL = new URL("http://127.0.0.1:9000");
 // Use the notnite one because I haven't written the server code yet 
-//const serverURL = new URL("https://webwebfishing.notnite.com/")
-//serverURL.pathname = suffix + "ws";
+const serverURL = new URL("https://webwebfishing.notnite.com/")
+serverURL.pathname = suffix + "ws";
 serverURL.protocol = serverURL.protocol === "https:" ? "wss:" : "ws:";
 
 const socket = new WebSocket(serverURL.toString()),
@@ -119,7 +119,7 @@ socket.addEventListener("open", () => {
 
 socket.addEventListener("message", (data) => {
   const message = JSON.parse(data.data);
-  console.log(data);
+  //console.log(data);
   switch (message.type) {
     case PacketType.S2CLobbies: {
       lobbies.clear();
