@@ -81,11 +81,11 @@ var StatusType = ((status) => (
 
 const suffix = window.self !== window.top ? "/.proxy/" : "/";
 
-// const serverURL = new URL(window.location.href);
+const serverURL = new URL("http://127.0.0.1:9000");
 // Use the notnite one because I haven't written the server code yet 
-const serverURL = new URL("https://webwebfishing.notnite.com/")
+//const serverURL = new URL("https://webwebfishing.notnite.com/")
+//serverURL.pathname = suffix + "ws";
 serverURL.protocol = serverURL.protocol === "https:" ? "wss:" : "ws:";
-serverURL.pathname = suffix + "ws";
 
 const socket = new WebSocket(serverURL.toString()),
   lobbies = new Map();
@@ -119,6 +119,7 @@ socket.addEventListener("open", () => {
 
 socket.addEventListener("message", (data) => {
   const message = JSON.parse(data.data);
+  console.log(data);
   switch (message.type) {
     case PacketType.S2CLobbies: {
       lobbies.clear();
@@ -311,7 +312,10 @@ gameFilePicker.addEventListener("input", () => {
 
 async function injectPatches() {
   await GODOT.init( "./" + PROJECT_NAME);
-  const networkingScript = await fetch(window.location.href + "Steam.gdc").then((data) => data.arrayBuffer());
+  const networkingScript = await fetch(window.location.href + "Steam.gdc").then((data) => {
+    console.log("loaded steam.gdc")
+    return data.arrayBuffer()
+  });
   await GODOT.preloadFile(networkingScript, "Steam.gdc");
   const overrideConfig = `[autoload]\nSteam="*./Steam.gdc"`.trim();
   await GODOT.preloadFile(new TextEncoder().encode(overrideConfig), "override.cfg");
