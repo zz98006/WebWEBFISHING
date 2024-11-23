@@ -2,14 +2,18 @@
   "name": "webwebfishing-server",
   "version": "1.0.0",
   "description": "",
-  "main": "Main.js",
+  "main": "compiled/WWF.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node compiled/WWF.js"
   },
   "author": "",
   "license": "ISC",
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
-    "webwebfishing-server": "file:"
+    "webwebfishing-server": "file:",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13"
   }
 }

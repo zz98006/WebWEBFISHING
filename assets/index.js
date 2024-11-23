@@ -81,10 +81,10 @@ var StatusType = ((status) => (
 
 const suffix = window.self !== window.top ? "/.proxy/" : "/";
 
-//const serverURL = new URL("http://127.0.0.1:9000");
+const serverURL = new URL("http://127.0.0.1:9000");
 // Use the notnite one because I haven't written the server code yet 
-const serverURL = new URL("https://webwebfishing.notnite.com/")
-serverURL.pathname = suffix + "ws";
+//const serverURL = new URL("https://webwebfishing.notnite.com/")
+//serverURL.pathname = suffix + "ws";
 serverURL.protocol = serverURL.protocol === "https:" ? "wss:" : "ws:";
 
 const socket = new WebSocket(serverURL.toString()),
@@ -92,8 +92,8 @@ const socket = new WebSocket(serverURL.toString()),
 
 let currentLobby = null;
 
-function sendPacket(e) {
-  socket.send(JSON.stringify(e));
+function sendPacket(packet) {
+  socket.send(JSON.stringify(packet));
 }
 
 function setLobbyCode(code) {
@@ -119,7 +119,7 @@ socket.addEventListener("open", () => {
 
 socket.addEventListener("message", (data) => {
   const message = JSON.parse(data.data);
-  //console.log(data);
+  console.log(message);
   switch (message.type) {
     case PacketType.S2CLobbies: {
       lobbies.clear();
@@ -133,8 +133,9 @@ socket.addEventListener("message", (data) => {
       break;
     }
     case PacketType.S2CJoinLobby: {
-      message.response === StatusType.Success;
-      currentLobby = lobbies.get(message.id) ?? null;
+      if (message.response === StatusType.Success) {
+        currentLobby = lobbies.get(message.id) ?? null;
+      }
       break;
     }
     case PacketType.S2CCurrentLobby: {
@@ -235,54 +236,56 @@ window.bridge = {
     return JSON.stringify(response ?? null);
   },
 };
-gamePacketReciever.addEventListener("message", (packet) => {
-  if (packet instanceof GamePacketEvent)
-    switch (packet.data.type) {
+gamePacketReciever.addEventListener("message", (event) => {
+  if (event instanceof GamePacketEvent) {
+    var packet = event.data;
+    switch (packet.type) {
       case PacketType.S2CLobbies: {
         packetCache.add({
           type: "lobby_match_list",
-          data: packet.data.lobbies.map((t) => t.id),
+          data: packet.lobbies.map((t) => t.id),
         });
         break;
       }
       case PacketType.S2CPacket: {
-        const channelCache = channelPacketCache.get(packet.data.channel),
-          packet1 = { sender: packet.data.sender, data: packet.data.data };
-        channelCache == null ? channelPacketCache.set(packet.data.channel, [packet1]) : channelCache.push(packet1);
+        const channelCache = channelPacketCache.get(packet.channel),
+          packet1 = { sender: packet.sender, data: packet.data };
+        channelCache == null ? channelPacketCache.set(packet.channel, [packet1]) : channelCache.push(packet1);
         break;
       }
       case PacketType.S2CCreateLobby: {
-        packetCache.add({ type: "lobby_created", id: packet.data.lobby.id });
+        packetCache.add({ type: "lobby_created", id: packet.lobby.id });
         break;
       }
       case PacketType.S2CJoinLobby: {
         packetCache.add({
           type: "lobby_joined",
-          id: packet.data.id,
-          response: packet.data.response,
+          id: packet.id,
+          response: packet.response,
         });
         break;
       }
       case PacketType.S2CPlayerJoined: {
-        packetCache.add({ type: "p2p_session_request", id: packet.data.player.id }),
-          packetCache.add({
-            type: "lobby_chat_update",
-            id: (currentLobby == null ? undefined : currentLobby.id) ?? 0,
-            player: packet.data.player.id,
-            state: PlayerState.Joined,
-          });
+        packetCache.add({ type: "p2p_session_request", id: packet.player.id });
+        packetCache.add({
+          type: "lobby_chat_update",
+          id: (currentLobby == null ? undefined : currentLobby.id) ?? 0,
+          player: packet.player.id,
+          state: PlayerState.Joined,
+        });
         break;
       }
       case PacketType.S2CPlayerLeft: {
         packetCache.add({
           type: "lobby_chat_update",
           id: (currentLobby == null ? undefined : currentLobby.id) ?? 0,
-          player: packet.data.player.id,
+          player: packet.player.id,
           state: PlayerState.Left,
         });
         break;
       }
     }
+  }
 });
 
 // Injection & Game/Save loading Stuff
@@ -311,7 +314,7 @@ gameFilePicker.addEventListener("input", () => {
 });
 
 async function injectPatches() {
-  await GODOT.init( "./" + PROJECT_NAME);
+  await GODOT.init("./" + PROJECT_NAME);
   const networkingScript = await fetch(window.location.href + "Steam.gdc").then((data) => {
     console.log("loaded steam.gdc")
     return data.arrayBuffer()
