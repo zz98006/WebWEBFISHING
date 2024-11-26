@@ -81,10 +81,10 @@ var StatusType = ((status) => (
 
 const suffix = window.self !== window.top ? "/.proxy/" : "/";
 
-const serverURL = new URL("http://127.0.0.1:9000");
-// Use the notnite one because I haven't written the server code yet 
-//const serverURL = new URL("https://webwebfishing.notnite.com/")
-//serverURL.pathname = suffix + "ws";
+//const serverURL = new URL("http://127.0.0.1:9000");
+// Use the notnite one because I haven't finished the server code yet 
+const serverURL = new URL("https://webwebfishing.notnite.com/")
+serverURL.pathname = suffix + "ws";
 serverURL.protocol = serverURL.protocol === "https:" ? "wss:" : "ws:";
 
 const socket = new WebSocket(serverURL.toString()),
@@ -297,6 +297,9 @@ const PROJECT_NAME = "webfishing_2_newver",
     executable: "./" + PROJECT_NAME,
     focusCanvas: true,
     args: ["--main-pack", PACKAGE_NAME],
+    onExit: (code) => {
+      window.location.reload();
+    }
   }),
   gameFilePicker = document.querySelector("#exe");
 
@@ -315,12 +318,12 @@ gameFilePicker.addEventListener("input", () => {
 
 async function injectPatches() {
   await GODOT.init("./" + PROJECT_NAME);
-  const networkingScript = await fetch(window.location.href + "Steam.gdc").then((data) => {
-    console.log("loaded steam.gdc")
+  const networkingScript = await fetch(window.location.href + "/Steam.gd").then((data) => {
+    console.log("loaded steam.gd")
     return data.arrayBuffer()
   });
-  await GODOT.preloadFile(networkingScript, "Steam.gdc");
-  const overrideConfig = `[autoload]\nSteam="*./Steam.gdc"`.trim();
+  await GODOT.preloadFile(networkingScript, "Steam.gd");
+  const overrideConfig = `[autoload]\nSteam="*./Steam.gd"`.trim();
   await GODOT.preloadFile(new TextEncoder().encode(overrideConfig), "override.cfg");
   gameFilePicker.disabled = false;
 }
@@ -396,10 +399,11 @@ var N;
     e.preventDefault();
   });
 
-const C = document.querySelector("#username");
-C.value = settings.personaName;
-C.addEventListener("input", () => {
-  (settings.personaName = C.value), saveSettings(settings);
+const usernameInput = document.querySelector("#username");
+usernameInput.value = settings.personaName;
+usernameInput.addEventListener("input", () => {
+  settings.personaName = usernameInput.value;
+  saveSettings(settings);
 });
 
 const J = document.querySelector("#save");
@@ -450,3 +454,9 @@ W.addEventListener("click", async () => {
   }),
     e.close();
 });
+
+window.addEventListener("beforeunload",(ev)=>{
+  if (window.saving_in_progress){ // == just in case its null
+    ev.preventDefault();
+  }
+})

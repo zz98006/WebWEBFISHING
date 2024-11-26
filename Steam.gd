@@ -14,6 +14,8 @@ const LOBBY_TYPE_PUBLIC = 2
 const LOBBY_TYPE_INVISIBLE = 3
 
 func req(data):
+	JavaScript.eval("window.saving_in_progress = " + str(UserSave.saving_in_progress).to_lower() + ";", true)
+
 	var msg = JSON.print(data)
 	var json = JavaScript.eval("window.bridge.process('" + msg + "');", true)
 	var result = JSON.parse(json).result

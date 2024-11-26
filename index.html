@@ -1,35 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="manifest" href="pwa/icons.json" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WebWEBFISHING</title>
     <script type="text/javascript" src="webfishing_2_newver.js"></script>
-    <script type="module" crossorigin src="assets/index.js"></script>
-    <link rel="stylesheet" crossorigin href="assets/index.css" />
+    <script type="module" src="index.js"></script>
+    <link rel="stylesheet" href="index.css" />
+    <link
+      href="https://fonts.cdnfonts.com/css/accidental-presidency"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="app">
       <div id="stuff">
-        <div id="settings">
-          <input type="text" id="username" placeholder="Player" />
-          <label for="username">username</label>
+        <h1>WebWEBFISHING</h1>
 
-          <input type="file" id="save" accept=".sav" />
-          <label for="save">import save file</label>
+        <input type="text" id="username" placeholder="Player" />
+        <label for="username">Username</label>
 
-          <button id="downloadSave">download save file</button>
-          <button id="resetSave">reset save</button>
+        <input type="file" id="save" style="display: none" accept=".sav" />
+
+        <div id="settings" class="wfmenu">
+          <button
+            class="wfmenu_button"
+            onclick="document.getElementById('save').click()"
+          >
+            Import Save
+          </button>
+          <button class="wfmenu_button" id="downloadSave">Download Save</button>
+          <button class="wfmenu_button" id="resetSave">Reset Save</button>
+          <button
+            class="wfmenu_button"
+            onclick="document.getElementById('exe').click()"
+          >
+            Load Game
+          </button>
+        </div>
+
+        <div id="savesDownload" class="wfmenu" style="display: none">
+          <button
+            class="wfmenu_button"
+            onclick="document.getElementById('save').click()"
+          >
+            Download Slot 1
+          </button>
+          <button
+            class="wfmenu_button"
+            onclick="document.getElementById('save').click()"
+          >
+            Download Slot 2
+          </button>
+          <button
+            class="wfmenu_button"
+            onclick="document.getElementById('save').click()"
+          >
+            Download Slot 3
+          </button>
+          <button
+            class="wfmenu_button"
+            onclick="document.getElementById('exe').click()"
+          >
+            Download Slot 4
+          </button>
+          <button
+            class="wfmenu_button"
+            onclick="document.getElementById('exe').click()"
+          >
+            Back
+          </button>
         </div>
 
         <p>
           <label for="exe"
-            >upload webfishing.exe from your game install to load the
-            game</label
+            >Upload WEBFISHING.exe from your game's install directory to load
+            the game</label
           >
           <br />
           <br />
-          <input type="file" id="exe" accept=".exe" disabled />
+          <input
+            type="file"
+            id="exe"
+            accept=".exe"
+            style="display: none"
+            disabled
+          />
         </p>
       </div>
 
