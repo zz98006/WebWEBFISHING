@@ -81,7 +81,7 @@ var StatusType = ((status) => (
 
 const suffix = window.self !== window.top ? "/.proxy/" : "/";
 
-//const serverURL = new URL("http://127.0.0.1:9000");
+//const serverURL = new URL("http://127.0.0.1:4158");
 // Use the notnite one because I haven't finished the server code yet 
 const serverURL = new URL("https://webwebfishing.notnite.com/")
 serverURL.pathname = suffix + "ws";

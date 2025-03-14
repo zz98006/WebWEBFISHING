@@ -10,6 +10,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "typescript": "^5.8.2",
     "webwebfishing-server": "file:",
     "ws": "^8.18.0"
   },

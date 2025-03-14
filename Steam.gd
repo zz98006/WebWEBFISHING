@@ -15,7 +15,7 @@ const LOBBY_TYPE_INVISIBLE = 3
 
 func req(data):
 	JavaScript.eval("window.saving_in_progress = " + str(UserSave.saving_in_progress).to_lower() + ";", true)
-
+	
 	var msg = JSON.print(data)
 	var json = JavaScript.eval("window.bridge.process('" + msg + "');", true)
 	var result = JSON.parse(json).result
@@ -38,7 +38,7 @@ func run_callbacks():
 			"lobby_match_list":
 				emit_signal("lobby_match_list", i["data"])
 
-
+# Stubs - Auth
 func steamInit():
 	return {
 		"status": 1
@@ -60,14 +60,14 @@ func getPersonaName():
 		"type": "getPersonaName"
 	})
 
-
+# Stubs - Misc
 func activateGameOverlayToUser(type, id):
 	pass
 
 func setRichPresence(key, value):
 	pass
 
-
+# Stubs - Lobby
 func addRequestLobbyListDistanceFilter(filter):
 	pass
 
@@ -89,10 +89,10 @@ func acceptP2PSessionWithUser(id):
 func closeP2PSessionWithUser(id):
 	pass
 
-
+# Stubs - Stats
 func getAchievement(id):
 	return {
-		"ret": true, 
+		"ret": true,
 		"achieved": true
 	}
 
@@ -105,7 +105,7 @@ func setAchievement(id):
 func storeStats():
 	pass
 
-
+# Lobby & networking
 func requestLobbyList():
 	req({
 		"type": "requestLobbyList"
@@ -113,20 +113,20 @@ func requestLobbyList():
 
 func getNumLobbyMembers(lobby):
 	return int(req({
-		"type": "getNumLobbyMembers", 
+		"type": "getNumLobbyMembers",
 		"lobby": lobby
 	}))
 
 func getLobbyMemberByIndex(lobby, index):
 	return int(req({
-		"type": "getLobbyMemberByIndex", 
-		"lobby": lobby, 
+		"type": "getLobbyMemberByIndex",
+		"lobby": lobby,
 		"index": index
 	})["id"])
 
 func getLobbyData(id, key):
 	var data = req({
-		"type": "getLobbyData", 
+		"type": "getLobbyData",
 		"id": id
 	})
 	match key:
@@ -139,7 +139,7 @@ func getLobbyData(id, key):
 		"cap":
 			return int(data["maxPlayers"])
 		"version":
-			return 1.1
+			return 1.10
 		"type":
 			return "public"
 		"banned_players":
@@ -151,13 +151,13 @@ func getLobbyData(id, key):
 
 func createLobby(type, limit):
 	return req({
-		"type": "createLobby", 
+		"type": "createLobby",
 		"maxPlayers": limit
 	})
 
 func joinLobby(id):
 	return req({
-		"type": "joinLobby", 
+		"type": "joinLobby",
 		"id": id
 	})
 
@@ -169,37 +169,37 @@ func leaveLobby(id):
 func setLobbyData(id, key, value):
 	if key == "code":
 		req({
-			"type": "setCode", 
+			"type": "setCode",
 			"code": value
 		})
 
 func getAvailableP2PPacketSize(channel):
 	return int(req({
-		"type": "getAvailableP2PPacketSize", 
+		"type": "getAvailableP2PPacketSize",
 		"channel": channel
 	}))
 
 func readP2PPacket(packet, channel):
 	var data = req({
-		"type": "readP2PPacket", 
+		"type": "readP2PPacket",
 		"channel": channel
 	})
 	return {
-		"steam_id_remote": int(data["sender"]), 
+		"steam_id_remote": int(data["sender"]),
 		"data": PoolByteArray(data["data"])
 	}
 
 func sendP2PPacket(member, data, _type, channel):
 	req({
-		"type": "sendP2PPacket", 
-		"member": member, 
-		"data": Array(data), 
+		"type": "sendP2PPacket",
+		"member": member,
+		"data": Array(data),
 		"channel": channel
 	})
 
 func getFriendPersonaName(id):
 	return req({
-		"type": "getFriendPersonaName", 
+		"type": "getFriendPersonaName",
 		"id": id
 	})
 
@@ -210,6 +210,6 @@ func getP2PSessionState(remote ):
 
 func getLobbyOwner(id):
 	return int(req({
-		"type": "getLobbyOwner", 
+		"type": "getLobbyOwner",
 		"id": id
 	}))

@@ -1,39 +1,210 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getNewLobbyID = exports.lobbies = exports.clients = void 0;
+// There's 0 schema validation to this so it's possible to troll on the network
+// I do not care, this game is already full of exploits
+const types_1 = require("./types");
 const ws_1 = require("ws");
-const Player_1 = __importDefault(require("./Player"));
-const Network_1 = __importStar(require("./Network"));
-const Net = __importStar(require("./Network"));
-const Lobby_1 = __importDefault(require("./Lobby"));
+const clients = new Map();
+const lobbies = new Map();
+function getFreeId(map) {
+    let id = 100;
+    while (map.has(id))
+        id++;
+    return id;
+}
+function send(client, message) {
+    //console.log(`Sending to ${client.id}`, message);
+    client.socket.send(JSON.stringify(message));
+}
+function getClient(steamId) {
+    var _a;
+    return (_a = [...clients.values()].find((c) => { var _a; return ((_a = c.steam) === null || _a === void 0 ? void 0 : _a.id) === steamId; })) !== null && _a !== void 0 ? _a : null;
+}
+function clientToNetwork(client) {
+    var _a, _b, _c, _d;
+    return {
+        id: (_b = (_a = client.steam) === null || _a === void 0 ? void 0 : _a.id) !== null && _b !== void 0 ? _b : 0,
+        name: (_d = (_c = client.steam) === null || _c === void 0 ? void 0 : _c.name) !== null && _d !== void 0 ? _d : ""
+    };
+}
+function lobbyToNetwork(lobby) {
+    return {
+        id: lobby.id,
+        name: lobby.name,
+        owner: lobby.owner,
+        ownerId: lobby.ownerId,
+        code: lobby.code,
+        players: lobby.members
+            .map((id) => {
+            const member = getClient(id);
+            if (member == null || member.steam == null)
+                return null;
+            return clientToNetwork(member);
+        })
+            .filter((x) => x != null),
+        maxPlayers: lobby.maxPlayers
+    };
+}
+function sendToLobby(lobby, message, filter) {
+    for (const id of lobby.members) {
+        const client = getClient(id);
+        if (client != null && filter(client)) {
+            send(client, message);
+        }
+    }
+}
+function updateLobbyForEveryone(lobby) {
+    sendToLobby(lobby, {
+        type: types_1.MessageType.S2CCurrentLobby,
+        lobby: lobbyToNetwork(lobby)
+    }, () => true);
+}
+function joinLobby(client, lobby) {
+    lobby.members.push(client.steam.id);
+    client.currentLobby = lobby.id;
+    updateLobbyForEveryone(lobby);
+}
+function announceJoin(client, lobby) {
+    sendToLobby(lobby, {
+        type: types_1.MessageType.S2CPlayerJoined,
+        player: clientToNetwork(client)
+    }, (c) => c.id !== client.steam.id);
+}
+function leaveLobby(client, lobby, _isOwner = false) {
+    sendToLobby(lobby, {
+        type: types_1.MessageType.S2CPlayerLeft,
+        player: clientToNetwork(client)
+    }, (c) => c.id !== client.steam.id);
+    lobby.members = lobby.members.filter((id) => { var _a; return id !== ((_a = client.steam) === null || _a === void 0 ? void 0 : _a.id); });
+    updateLobbyForEveryone(lobby);
+    if (lobby.members.length === 0) {
+        lobbies.delete(lobby.id);
+    }
+}
+function onMessage(client, message) {
+    var _a, _b;
+    switch (message.type) {
+        case types_1.MessageType.C2SHello: {
+            client.steam = message.steam;
+            break;
+        }
+        case types_1.MessageType.C2SGetLobbies: {
+            console.log(lobbies);
+            send(client, {
+                type: types_1.MessageType.S2CLobbies,
+                lobbies: Array.from(lobbies.values()).map(lobbyToNetwork)
+            });
+            break;
+        }
+        case types_1.MessageType.C2SPacket: {
+            if (client.currentLobby == null || client.steam == null)
+                return;
+            const lobby = lobbies.get(client.currentLobby);
+            if (lobby == null)
+                return;
+            sendToLobby(lobby, {
+                type: types_1.MessageType.S2CPacket,
+                sender: client.steam.id,
+                data: message.data,
+                channel: message.channel
+            }, (c) => { var _a; return ((_a = c.steam) === null || _a === void 0 ? void 0 : _a.id) === message.member; });
+            break;
+        }
+        case types_1.MessageType.C2SCreateLobby: {
+            if (client.currentLobby != null || client.steam == null)
+                return;
+            const lobby = {
+                id: getFreeId(lobbies),
+                name: `${client.steam.name}'s Lobby`,
+                owner: client.steam.name,
+                ownerId: client.steam.id,
+                code: `TEMP-${client.id}`,
+                maxPlayers: message.maxPlayers,
+                members: []
+            };
+            lobbies.set(lobby.id, lobby);
+            joinLobby(client, lobby);
+            send(client, {
+                type: types_1.MessageType.S2CCreateLobby,
+                lobby: lobbyToNetwork(lobby)
+            });
+            send(client, {
+                type: types_1.MessageType.S2CJoinLobby,
+                id: lobby.id,
+                response: types_1.ChatRoomEnterResponse.Success
+            });
+            announceJoin(client, lobby);
+            break;
+        }
+        case types_1.MessageType.C2SJoinLobby: {
+            if (client.currentLobby != null || client.steam == null) {
+                send(client, {
+                    type: types_1.MessageType.S2CJoinLobby,
+                    id: message.id,
+                    response: types_1.ChatRoomEnterResponse.Error
+                });
+                return;
+            }
+            const lobby = lobbies.get(message.id);
+            if (lobby == null) {
+                send(client, {
+                    type: types_1.MessageType.S2CJoinLobby,
+                    id: message.id,
+                    response: types_1.ChatRoomEnterResponse.DoesntExist
+                });
+                return;
+            }
+            if (lobby.members.length >= lobby.maxPlayers) {
+                send(client, {
+                    type: types_1.MessageType.S2CJoinLobby,
+                    id: message.id,
+                    response: types_1.ChatRoomEnterResponse.Full
+                });
+                return;
+            }
+            joinLobby(client, lobby);
+            announceJoin(client, lobby);
+            send(client, {
+                type: types_1.MessageType.S2CJoinLobby,
+                id: lobby.id,
+                response: types_1.ChatRoomEnterResponse.Success
+            });
+            break;
+        }
+        case types_1.MessageType.C2SSetCode: {
+            if (client.currentLobby == null)
+                return;
+            const lobby = lobbies.get(client.currentLobby);
+            if (lobby == null)
+                return;
+            if (lobby.ownerId !== ((_a = client.steam) === null || _a === void 0 ? void 0 : _a.id))
+                return;
+            lobby.code = message.code;
+            break;
+        }
+        case types_1.MessageType.C2SLeaveLobby: {
+            if (client.currentLobby == null)
+                return;
+            const lobby = lobbies.get(client.currentLobby);
+            if (lobby == null)
+                return;
+            leaveLobby(client, lobby, ((_b = client.steam) === null || _b === void 0 ? void 0 : _b.id) === lobby.ownerId);
+            break;
+        }
+    }
+}
+function onClose(client) {
+    var _a;
+    clients.delete(client.id);
+    if (client.currentLobby != null) {
+        const lobby = lobbies.get(client.currentLobby);
+        if (lobby !== undefined) {
+            leaveLobby(client, lobby, ((_a = client.steam) === null || _a === void 0 ? void 0 : _a.id) === lobby.ownerId);
+        }
+    }
+}
 const wss = new ws_1.WebSocketServer({
-    port: 9000,
+    port: 4158,
     perMessageDeflate: {
         zlibDeflateOptions: {
             // See zlib defaults.
@@ -54,125 +225,36 @@ const wss = new ws_1.WebSocketServer({
         // should not be compressed if context takeover is disabled.
     }
 });
-exports.clients = new Map();
-exports.lobbies = new Map();
 wss.on("connection", (socket) => {
-    socket.on("message", (data) => {
-        let obj = JSON.parse(data.toString());
-        let rawPacket = Network_1.default.from(obj);
-        console.log(rawPacket);
-        switch (rawPacket.type) {
-            case Net.PacketType.C2SHello: {
-                let packet = rawPacket;
-                exports.clients.set(socket, new Player_1.default(socket, packet.steam));
-                break;
-            }
-            case Net.PacketType.C2SGetLobbies: {
-                let list = [];
-                exports.lobbies.forEach((lobby) => {
-                    list.push(lobby.data.lobby);
-                });
-                let lobbiesPacket = {
-                    type: Net.PacketType.S2CLobbies,
-                    lobbies: list
-                };
-                socket.send(JSON.stringify(lobbiesPacket));
-                break;
-            }
-            case Net.PacketType.C2SPacket: {
-                let packet = rawPacket;
-                let player = exports.clients.get(socket);
-                if (player != undefined && player.currentLobby != null) {
-                    player.currentLobby.packetRecieve(packet, player);
-                }
-                break;
-            }
-            case Net.PacketType.C2SCreateLobby: {
-                let packet = rawPacket;
-                let player = exports.clients.get(socket);
-                if (player != undefined) {
-                    let lobby = new Lobby_1.default(player, packet.maxPlayers);
-                    exports.lobbies.set(lobby.id, lobby);
-                }
-                else {
-                    let joinLobbyPacket = {
-                        type: Net.PacketType.S2CJoinLobby,
-                        id: 100,
-                        response: Net.StatusType.Error
-                    };
-                    socket.send(JSON.stringify(joinLobbyPacket));
-                }
-                break;
-            }
-            case Net.PacketType.C2SJoinLobby: {
-                let packet = rawPacket;
-                let lobby = exports.lobbies.get(packet.id);
-                let player = exports.clients.get(socket);
-                if (player == undefined) {
-                    let joinLobbyPacket = {
-                        type: Net.PacketType.S2CJoinLobby,
-                        id: packet.id,
-                        response: Network_1.StatusType.Error
-                    };
-                    socket.send(JSON.stringify(joinLobbyPacket));
-                    break;
-                }
-                if (lobby != undefined) {
-                    lobby.joinRequest(player);
-                }
-                else {
-                    let joinLobbyPacket = {
-                        type: Net.PacketType.S2CJoinLobby,
-                        id: packet.id,
-                        response: Network_1.StatusType.DoesntExist
-                    };
-                    socket.send(JSON.stringify(joinLobbyPacket));
-                }
-                break;
-            }
-            case Net.PacketType.C2SSetCode: {
-                let codePacket = rawPacket;
-                let player = exports.clients.get(socket);
-                if (player != undefined && player.currentLobby != null) {
-                    if (socket === player.currentLobby.host.socket) {
-                        player.currentLobby.code = codePacket.code;
-                        player.currentLobby.generateLobbyData();
-                        //let currentLobbyPacket:Net.ClientboundCurrentLobbyPacket = {
-                        //    type: Net.PacketType.S2CCurrentLobby,
-                        //    lobby: lobbyData.lobby,
-                        //    maxPlayers: lobbyData.maxPlayers
-                        //}
-                        //socket.send(JSON.stringify(currentLobbyPacket))
-                    }
-                }
-                break;
-            }
-            case Net.PacketType.C2SLeaveLobby:
-                let player = exports.clients.get(socket);
-                if (player != undefined && player.currentLobby != null) {
-                    player.currentLobby.playerLeave(player);
-                }
-                break;
-            default:
-                console.warn(`why tf is a server packet being sent??: ${data}`);
+    const id = getFreeId(clients);
+    const client = {
+        id,
+        socket
+    };
+    clients.set(client.id, client);
+    socket.on("open", () => {
+        console.log(`Client ${id} connected`);
+    });
+    socket.on("message", (e) => {
+        const message = JSON.parse(e.toString('utf8'));
+        //console.log(`Client ${id} sent`, message);
+        try {
+            onMessage(client, message);
+        }
+        catch (e) {
+            console.error("Error handling message", e);
         }
     });
     socket.on("close", () => {
-        let player = exports.clients.get(socket);
-        if (player != undefined && player.currentLobby != null) {
-            player.currentLobby.playerLeave(player);
+        console.log(`Client ${id} disconnected`);
+        try {
+            onClose(client);
         }
-        exports.clients.delete(socket);
+        catch (e) {
+            console.error("Error handling close", e);
+        }
+    });
+    socket.on("error", (e) => {
+        console.error(e);
     });
 });
-function getNewLobbyID() {
-    let newLobbyId = -1;
-    let array = new Uint32Array(1);
-    crypto.getRandomValues(array);
-    newLobbyId = array[0];
-    return newLobbyId;
-}
-exports.getNewLobbyID = getNewLobbyID;
-setInterval(() => {
-    console.log("Players Online: " + exports.clients.size + " | Lobbies active: " + exports.lobbies.size);
-}, 5000);
